@@ -67,15 +67,25 @@ def extract_embeddings(
             with torch.no_grad():
                 embedding = model.get_embedding(tmp_path).cpu().numpy().squeeze()
 
-            # Normalize
-            embedding = embedding / np.linalg.norm(embedding)
-            embeddings.append(embedding)
-            timestamps.append((current_time, current_time + window_length))
+            # Normalize (with protection against division by zero)
+            norm = np.linalg.norm(embedding)
+            if norm > 1e-10:  # Avoid division by zero
+                embedding = embedding / norm
+                embeddings.append(embedding)
+                timestamps.append((current_time, current_time + window_length))
+            else:
+                print(f"Warning: Zero embedding at {current_time:.1f}s, skipping")
 
         finally:
             os.remove(tmp_path)
 
         current_time += step_length
+
+    if len(embeddings) == 0:
+        raise RuntimeError(
+            "No valid embeddings extracted. Audio may be too short, "
+            "silent, or corrupted."
+        )
 
     print(f"✓ Extracted {len(embeddings)} embeddings")
     return np.stack(embeddings), timestamps
@@ -91,14 +101,20 @@ def auto_cluster_speakers(embeddings: np.ndarray, max_speakers: int = 10):
 
     Returns:
         Array of speaker labels
+
+    Raises:
+        RuntimeError: If clustering fails for all speaker counts
     """
     print(f"Clustering speakers (max: {max_speakers})...")
+
+    if len(embeddings) < 2:
+        raise ValueError("Need at least 2 embeddings for clustering")
 
     best_labels = None
     best_score = -1
     best_k = 2
 
-    for k in range(2, max_speakers + 1):
+    for k in range(2, min(max_speakers + 1, len(embeddings) + 1)):
         try:
             labels = SpectralClustering(
                 n_clusters=k,
@@ -116,6 +132,13 @@ def auto_cluster_speakers(embeddings: np.ndarray, max_speakers: int = 10):
         except Exception as e:
             print(f"Warning: Clustering with {k} speakers failed: {e}")
             continue
+
+    # If all clustering attempts failed, raise error
+    if best_labels is None:
+        raise RuntimeError(
+            f"Failed to cluster speakers. Tried 2-{max_speakers} speakers. "
+            "Try different audio or adjust max_speakers parameter."
+        )
 
     print(f"✓ Detected {best_k} speakers (silhouette score: {best_score:.3f})")
     return best_labels
