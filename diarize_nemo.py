@@ -22,6 +22,11 @@ import torch
 from nemo.collections.asr.models import EncDecSpeakerLabelModel
 from sklearn.cluster import SpectralClustering
 from sklearn.metrics import silhouette_score
+from tqdm import tqdm
+
+# Add parent directory to path for utils import
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import validate_audio_file
 
 
 def extract_embeddings(
@@ -49,37 +54,42 @@ def extract_embeddings(
     current_time = 0.0
     total_duration = len(wav) / sr
 
+    # Calculate total number of windows for progress bar
+    num_windows = int((total_duration - window_length) / step_length) + 1
+
     print(f"Extracting embeddings (window: {window_length}s, step: {step_length}s)...")
 
-    while current_time + window_length <= total_duration:
-        # Extract segment
-        start_sample = int(current_time * sr)
-        end_sample = int((current_time + window_length) * sr)
-        segment = wav[start_sample:end_sample]
+    with tqdm(total=num_windows, desc="Extracting embeddings", unit="window") as pbar:
+        while current_time + window_length <= total_duration:
+            # Extract segment
+            start_sample = int(current_time * sr)
+            end_sample = int((current_time + window_length) * sr)
+            segment = wav[start_sample:end_sample]
 
-        # Save to temporary file for NeMo
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-            sf.write(tmp.name, segment, sr)
-            tmp_path = tmp.name
+            # Save to temporary file for NeMo
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                sf.write(tmp.name, segment, sr)
+                tmp_path = tmp.name
 
-        try:
-            # Get embedding
-            with torch.no_grad():
-                embedding = model.get_embedding(tmp_path).cpu().numpy().squeeze()
+            try:
+                # Get embedding
+                with torch.no_grad():
+                    embedding = model.get_embedding(tmp_path).cpu().numpy().squeeze()
 
-            # Normalize (with protection against division by zero)
-            norm = np.linalg.norm(embedding)
-            if norm > 1e-10:  # Avoid division by zero
-                embedding = embedding / norm
-                embeddings.append(embedding)
-                timestamps.append((current_time, current_time + window_length))
-            else:
-                print(f"Warning: Zero embedding at {current_time:.1f}s, skipping")
+                # Normalize (with protection against division by zero)
+                norm = np.linalg.norm(embedding)
+                if norm > 1e-10:  # Avoid division by zero
+                    embedding = embedding / norm
+                    embeddings.append(embedding)
+                    timestamps.append((current_time, current_time + window_length))
+                else:
+                    pbar.write(f"Warning: Zero embedding at {current_time:.1f}s, skipping")
 
-        finally:
-            os.remove(tmp_path)
+            finally:
+                os.remove(tmp_path)
 
-        current_time += step_length
+            current_time += step_length
+            pbar.update(1)
 
     if len(embeddings) == 0:
         raise RuntimeError(
@@ -244,11 +254,17 @@ def diarize_and_tag(
 
     Returns:
         List of tagged segments
+
+    Raises:
+        FileNotFoundError: If files don't exist
+        ValueError: If files are invalid
+        RuntimeError: If diarization fails
     """
-    # Check files
-    if not os.path.isfile(audio_path):
-        raise FileNotFoundError(f"Audio file not found: {audio_path}")
-    if not os.path.isfile(whisper_json_path):
+    # Validate files
+    audio_path = validate_audio_file(audio_path)
+
+    whisper_json_path = Path(whisper_json_path)
+    if not whisper_json_path.is_file():
         raise FileNotFoundError(f"Whisper JSON not found: {whisper_json_path}")
 
     # Load NeMo model

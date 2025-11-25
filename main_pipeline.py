@@ -84,7 +84,7 @@ def transcribe_with_diarization(
         cleaned_path = audio_path.parent / f"{audio_path.stem}_cleaned.wav"
 
         if not run_command(
-            ["python", "clean_audio.py", str(audio_path)],
+            [PYTHON_EXE, str(SCRIPT_DIR / "clean_audio.py"), str(audio_path)],
             "Audio cleaning"
         ):
             print("Warning: Audio cleaning failed, continuing with original file")
@@ -99,7 +99,7 @@ def transcribe_with_diarization(
 
     if not run_command(
         [
-            "python", "transcribe_whisper.py",
+            PYTHON_EXE, str(SCRIPT_DIR / "transcribe_whisper.py"),
             str(working_audio),
             "--lang", language,
             "--model", whisper_model
@@ -117,7 +117,7 @@ def transcribe_with_diarization(
 
     if not run_command(
         [
-            "python", "diarize_nemo.py",
+            PYTHON_EXE, str(SCRIPT_DIR / "diarize_nemo.py"),
             str(working_audio),
             str(json_file),
             "--max-speakers", str(max_speakers)
@@ -132,7 +132,7 @@ def transcribe_with_diarization(
 
     # Step 4: Convert to readable formats
     if not run_command(
-        ["python", "convert_to_readable.py", str(tagged_json)],
+        [PYTHON_EXE, str(SCRIPT_DIR / "convert_to_readable.py"), str(tagged_json)],
         "Format conversion"
     ):
         return False

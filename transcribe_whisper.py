@@ -14,6 +14,10 @@ from pathlib import Path
 import torch
 import whisper
 
+# Add parent directory to path for utils import
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import validate_audio_file
+
 
 def transcribe_audio(
     audio_path: str,
@@ -38,9 +42,13 @@ def transcribe_audio(
 
     Returns:
         Dictionary with transcription results
+
+    Raises:
+        FileNotFoundError: If audio file doesn't exist
+        ValueError: If audio file is invalid
     """
-    if not os.path.isfile(audio_path):
-        raise FileNotFoundError(f"Audio file not found: {audio_path}")
+    # Validate audio file
+    audio_path = validate_audio_file(audio_path)
 
     # Check device
     device = "cuda" if torch.cuda.is_available() else "cpu"
