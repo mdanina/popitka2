@@ -84,7 +84,16 @@ def save_results(result: dict, audio_path: str):
     Args:
         result: Transcription result from Whisper
         audio_path: Original audio file path (used for output naming)
+
+    Raises:
+        ValueError: If result doesn't contain required keys
     """
+    # Validate result structure
+    if "segments" not in result:
+        raise ValueError("Whisper result missing 'segments' key")
+    if "text" not in result:
+        raise ValueError("Whisper result missing 'text' key")
+
     base = Path(audio_path).stem
 
     # Save segments as JSON

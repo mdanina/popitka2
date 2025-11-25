@@ -10,6 +10,11 @@ import sys
 from pathlib import Path
 import subprocess
 
+# Get the directory where this script is located
+SCRIPT_DIR = Path(__file__).parent.resolve()
+# Get the Python executable that's running this script
+PYTHON_EXE = sys.executable
+
 
 def run_command(cmd: list, description: str):
     """

@@ -13,17 +13,18 @@ from datetime import timedelta
 def format_timestamp(seconds: float) -> str:
     """
     Format seconds to HH:MM:SS timestamp.
+    Correctly handles audio longer than 24 hours.
 
     Args:
         seconds: Time in seconds
 
     Returns:
-        Formatted timestamp string
+        Formatted timestamp string (HH:MM:SS)
     """
-    td = timedelta(seconds=seconds)
-    hours = td.seconds // 3600
-    minutes = (td.seconds % 3600) // 60
-    secs = td.seconds % 60
+    total_seconds = int(seconds)
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    secs = total_seconds % 60
     return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
 
