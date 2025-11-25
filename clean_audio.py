@@ -9,6 +9,10 @@ import os
 import subprocess
 from pathlib import Path
 
+# Add parent directory to path for utils import
+sys.path.insert(0, str(Path(__file__).parent))
+from utils import validate_audio_file
+
 
 def clean_audio(input_path: str, output_path: str = None) -> str:
     """
@@ -20,11 +24,14 @@ def clean_audio(input_path: str, output_path: str = None) -> str:
 
     Returns:
         Path to cleaned audio file
-    """
-    input_path = Path(input_path)
 
-    if not input_path.exists():
-        raise FileNotFoundError(f"Input file not found: {input_path}")
+    Raises:
+        FileNotFoundError: If input file doesn't exist
+        ValueError: If input file is invalid
+        subprocess.CalledProcessError: If ffmpeg fails
+    """
+    # Validate input file
+    input_path = validate_audio_file(input_path)
 
     # Generate output path if not provided
     if output_path is None:
