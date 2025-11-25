@@ -1,0 +1,16 @@
+# Core dependencies for audio transcription with diarization
+openai-whisper
+torch
+torchaudio
+librosa
+soundfile
+
+# NeMo toolkit for speaker diarization
+nemo_toolkit[asr]
+
+# Machine learning and clustering
+scikit-learn
+numpy
+
+# Utilities
+python-dotenv
