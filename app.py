@@ -351,6 +351,97 @@ def main():
         help="Поддерживаемые форматы: WAV, MP3, FLAC, M4A, OGG, AAC, WMA"
     )
     
+    # Initialize session state for results
+    if 'transcription_results' not in st.session_state:
+        st.session_state.transcription_results = None
+    if 'uploaded_file_name' not in st.session_state:
+        st.session_state.uploaded_file_name = None
+    
+    # Check if we have saved results to display
+    if st.session_state.transcription_results and st.session_state.transcription_results.get("success"):
+        st.success("✅ Результаты предыдущей обработки сохранены")
+        
+        # Display saved results
+        st.markdown("---")
+        st.header("📄 Результаты")
+        
+        # Transcript preview
+        if "transcript_text" in st.session_state.transcription_results:
+            st.subheader("Предпросмотр транскрипции")
+            st.text_area(
+                "Транскрипция",
+                value=st.session_state.transcription_results["transcript_text"],
+                height=300,
+                disabled=True,
+                label_visibility="collapsed"
+            )
+        
+        # Download buttons
+        st.subheader("📥 Скачать результаты")
+        col1, col2, col3 = st.columns(3)
+        
+        results = st.session_state.transcription_results
+        if results["output_files"].get("txt"):
+            try:
+                with open(results["output_files"]["txt"], "rb") as f:
+                    col1.download_button(
+                        "📄 TXT файл",
+                        f.read(),
+                        file_name=Path(results["output_files"]["txt"]).name,
+                        mime="text/plain"
+                    )
+            except:
+                col1.info("Файл недоступен")
+        
+        if results["output_files"].get("markdown"):
+            try:
+                with open(results["output_files"]["markdown"], "rb") as f:
+                    col2.download_button(
+                        "📝 Markdown файл",
+                        f.read(),
+                        file_name=Path(results["output_files"]["markdown"]).name,
+                        mime="text/markdown"
+                    )
+            except:
+                col2.info("Файл недоступен")
+        
+        if results["output_files"].get("tagged_json"):
+            try:
+                with open(results["output_files"]["tagged_json"], "rb") as f:
+                    col3.download_button(
+                        "📊 JSON файл",
+                        f.read(),
+                        file_name=Path(results["output_files"]["tagged_json"]).name,
+                        mime="application/json"
+                    )
+            except:
+                col3.info("Файл недоступен")
+        
+        # Statistics
+        if "transcript_data" in results:
+            st.markdown("---")
+            st.subheader("📊 Статистика")
+            
+            data = results["transcript_data"]
+            if "segments" in data:
+                segments = data["segments"]
+                speakers = set(seg.get("speaker", "Unknown") for seg in segments)
+                
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Сегментов", len(segments))
+                col2.metric("Спикеров", len(speakers))
+                if segments:
+                    duration = segments[-1].get("end", 0)
+                    col3.metric("Длительность", f"{duration/60:.1f} мин")
+        
+        st.markdown("---")
+        if st.button("🗑️ Очистить результаты", type="secondary"):
+            st.session_state.transcription_results = None
+            st.session_state.uploaded_file_name = None
+            st.rerun()
+        
+        st.markdown("---")
+    
     if uploaded_file is not None:
         # Display file info
         file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # MB
@@ -387,70 +478,15 @@ def main():
                 )
                 
                 if results and results["success"]:
+                    # Save results to session state
+                    st.session_state.transcription_results = results
+                    st.session_state.uploaded_file_name = uploaded_file.name
+                    
                     st.success("✅ Транскрибация завершена успешно!")
+                    st.info("💾 Результаты сохранены и будут доступны даже после перезагрузки страницы")
                     
-                    # Display results
-                    st.markdown("---")
-                    st.header("📄 Результаты")
-                    
-                    # Transcript preview
-                    if "transcript_text" in results:
-                        st.subheader("Предпросмотр транскрипции")
-                        st.text_area(
-                            "Транскрипция",
-                            value=results["transcript_text"],
-                            height=300,
-                            disabled=True,
-                            label_visibility="collapsed"
-                        )
-                    
-                    # Download buttons
-                    st.subheader("📥 Скачать результаты")
-                    col1, col2, col3 = st.columns(3)
-                    
-                    if results["output_files"].get("txt"):
-                        with open(results["output_files"]["txt"], "rb") as f:
-                            col1.download_button(
-                                "📄 TXT файл",
-                                f.read(),
-                                file_name=Path(results["output_files"]["txt"]).name,
-                                mime="text/plain"
-                            )
-                    
-                    if results["output_files"].get("markdown"):
-                        with open(results["output_files"]["markdown"], "rb") as f:
-                            col2.download_button(
-                                "📝 Markdown файл",
-                                f.read(),
-                                file_name=Path(results["output_files"]["markdown"]).name,
-                                mime="text/markdown"
-                            )
-                    
-                    if results["output_files"].get("tagged_json"):
-                        with open(results["output_files"]["tagged_json"], "rb") as f:
-                            col3.download_button(
-                                "📊 JSON файл",
-                                f.read(),
-                                file_name=Path(results["output_files"]["tagged_json"]).name,
-                                mime="application/json"
-                            )
-                    
-                    # Statistics
-                    if "transcript_data" in results:
-                        st.markdown("---")
-                        st.subheader("📊 Статистика")
-                        
-                        data = results["transcript_data"]
-                        if "segments" in data:
-                            segments = data["segments"]
-                            speakers = set(seg.get("speaker", "Unknown") for seg in segments)
-                            
-                            col1, col2, col3 = st.columns(3)
-                            col1.metric("Сегментов", len(segments))
-                            col2.metric("Спикеров", len(speakers))
-                            if segments:
-                                duration = segments[-1].get("end", 0)
-                                col3.metric("Длительность", f"{duration/60:.1f} мин")
+                    # Rerun to show saved results
+                    st.rerun()
                 
                 elif results:
                     error_msg = results.get("error", "Неизвестная ошибка")

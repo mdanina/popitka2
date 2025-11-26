@@ -60,3 +60,4 @@ streamlit run app.py --server.port 8502
 - Размер файла не должен превышать 500 MB
 
 
+
