@@ -35,11 +35,11 @@ def run_command(cmd: list, description: str):
             capture_output=False,
             text=True
         )
-        print(f"✓ {description} completed successfully")
+        print(f"[OK] {description} completed successfully")
         return True
 
     except subprocess.CalledProcessError as e:
-        print(f"✗ Error in {description}")
+        print(f"[ERROR] Error in {description}")
         print(f"Command: {' '.join(cmd)}")
         return False
 
@@ -67,7 +67,7 @@ def transcribe_with_diarization(
     audio_path = Path(audio_path)
 
     if not audio_path.exists():
-        print(f"✗ Error: Audio file not found: {audio_path}")
+        print(f"[ERROR] Audio file not found: {audio_path}")
         return False
 
     print(f"\n{'#' * 70}")
@@ -109,7 +109,7 @@ def transcribe_with_diarization(
         return False
 
     if not json_file.exists():
-        print(f"✗ Error: Transcription file not created: {json_file}")
+        print(f"[ERROR] Transcription file not created: {json_file}")
         return False
 
     # Step 3: Speaker diarization
@@ -127,7 +127,7 @@ def transcribe_with_diarization(
         return False
 
     if not tagged_json.exists():
-        print(f"✗ Error: Tagged transcript not created: {tagged_json}")
+        print(f"[ERROR] Tagged transcript not created: {tagged_json}")
         return False
 
     # Step 4: Convert to readable formats

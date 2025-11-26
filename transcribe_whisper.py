@@ -49,6 +49,8 @@ def transcribe_audio(
     """
     # Validate audio file
     audio_path = validate_audio_file(audio_path)
+    # Convert Path to string for Whisper
+    audio_path = str(audio_path)
 
     # Check device
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -57,7 +59,21 @@ def transcribe_audio(
 
     # Load model
     print(f"Loading Whisper model: {model_size}...")
-    model = whisper.load_model(model_size, device=device)
+    try:
+        model = whisper.load_model(model_size, device=device)
+        print(f"[OK] Model loaded successfully")
+    except Exception as e:
+        error_msg = str(e)
+        if "download" in error_msg.lower() or "connection" in error_msg.lower():
+            print(f"[ERROR] Failed to download/load model. This may be due to:")
+            print(f"  - No internet connection (model needs to be downloaded first time)")
+            print(f"  - Insufficient disk space")
+            print(f"  - Network issues")
+            print(f"\nTry:")
+            print(f"  1. Check internet connection")
+            print(f"  2. Use a smaller model (e.g., 'small' or 'medium')")
+            print(f"  3. Manually download model if needed")
+        raise RuntimeError(f"Failed to load Whisper model '{model_size}': {error_msg}") from e
 
     # Prepare transcription options
     options = {
@@ -73,14 +89,16 @@ def transcribe_audio(
         options["initial_prompt"] = initial_prompt
 
     # Transcribe
-    print(f"Transcribing audio: {audio_path}")
+    # Ensure audio_path is a string (not Path object)
+    audio_path_str = str(audio_path)
+    print(f"Transcribing audio: {audio_path_str}")
     print(f"Language: {language}, Model: {model_size}")
     start_time = time.time()
 
-    result = model.transcribe(audio_path, **options)
+    result = model.transcribe(audio_path_str, **options)
 
     elapsed = round(time.time() - start_time, 2)
-    print(f"✓ Transcription completed in {elapsed}s")
+    print(f"[OK] Transcription completed in {elapsed}s")
 
     return result
 
@@ -108,13 +126,13 @@ def save_results(result: dict, audio_path: str):
     json_path = Path(audio_path).parent / f"{base}.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(result["segments"], f, ensure_ascii=False, indent=2)
-    print(f"✓ Segments saved to: {json_path}")
+    print(f"[OK] Segments saved to: {json_path}")
 
     # Save full text as TXT
     txt_path = Path(audio_path).parent / f"{base}.txt"
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(result["text"])
-    print(f"✓ Full text saved to: {txt_path}")
+    print(f"[OK] Full text saved to: {txt_path}")
 
 
 def main():
@@ -191,10 +209,10 @@ Examples:
         # Save results
         save_results(result, args.audio_path)
 
-        print("\n✓ Transcription complete!")
+        print("\n[OK] Transcription complete!")
 
     except Exception as e:
-        print(f"\n✗ Error: {e}")
+        print(f"\n[ERROR] Error: {e}")
         sys.exit(1)
 
 

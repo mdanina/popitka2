@@ -61,7 +61,7 @@ def clean_audio(input_path: str, output_path: str = None) -> str:
             text=True,
             check=True
         )
-        print(f"✓ Audio cleaned successfully: {output_path}")
+        print(f"[OK] Audio cleaned successfully: {output_path}")
         return str(output_path)
 
     except subprocess.CalledProcessError as e:
@@ -88,9 +88,9 @@ def main():
 
     try:
         cleaned_file = clean_audio(input_file, output_file)
-        print(f"\n✓ Done! Cleaned audio saved to: {cleaned_file}")
+        print(f"\n[OK] Done! Cleaned audio saved to: {cleaned_file}")
     except Exception as e:
-        print(f"\n✗ Error: {e}")
+        print(f"\n[ERROR] Error: {e}")
         sys.exit(1)
 
 

@@ -97,7 +97,7 @@ def extract_embeddings(
             "silent, or corrupted."
         )
 
-    print(f"✓ Extracted {len(embeddings)} embeddings")
+    print(f"[OK] Extracted {len(embeddings)} embeddings")
     return np.stack(embeddings), timestamps
 
 
@@ -150,7 +150,7 @@ def auto_cluster_speakers(embeddings: np.ndarray, max_speakers: int = 10):
             "Try different audio or adjust max_speakers parameter."
         )
 
-    print(f"✓ Detected {best_k} speakers (silhouette score: {best_score:.3f})")
+    print(f"[OK] Detected {best_k} speakers (silhouette score: {best_score:.3f})")
     return best_labels
 
 
@@ -194,7 +194,7 @@ def merge_segments(timestamps, labels, gap_threshold: float = 0.5):
     # Add last segment
     merged.append(current_segment)
 
-    print(f"✓ Merged into {len(merged)} continuous segments")
+    print(f"[OK] Merged into {len(merged)} continuous segments")
     return merged
 
 
@@ -235,7 +235,7 @@ def assign_speakers_to_transcript(whisper_segments, diarization_segments):
         tagged_segment = {**seg, "speaker": speaker}
         tagged_segments.append(tagged_segment)
 
-    print(f"✓ Tagged {len(tagged_segments)} segments with speakers")
+    print(f"[OK] Tagged {len(tagged_segments)} segments with speakers")
     return tagged_segments
 
 
@@ -285,7 +285,7 @@ def diarize_and_tag(
     print(f"Loading audio: {audio_path}")
     wav, sr = librosa.load(audio_path, sr=16000, mono=True)
     duration = len(wav) / sr
-    print(f"✓ Audio loaded: {duration:.1f}s")
+    print(f"[OK] Audio loaded: {duration:.1f}s")
 
     # Extract embeddings
     embeddings, timestamps = extract_embeddings(wav, sr, model)
@@ -353,10 +353,10 @@ Examples:
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(tagged_segments, f, ensure_ascii=False, indent=2)
 
-        print(f"\n✓ Tagged transcript saved to: {output_path}")
+        print(f"\n[OK] Tagged transcript saved to: {output_path}")
 
     except Exception as e:
-        print(f"\n✗ Error: {e}")
+        print(f"\n[ERROR] Error: {e}")
         sys.exit(1)
 
 

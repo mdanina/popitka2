@@ -44,7 +44,7 @@ def convert_to_txt(segments: list, output_path: str):
 
             f.write(f"[{timestamp}] {speaker}: {text}\n")
 
-    print(f"✓ TXT saved to: {output_path}")
+    print(f"[OK] TXT saved to: {output_path}")
 
 
 def convert_to_markdown(segments: list, output_path: str, audio_name: str = None):
@@ -90,7 +90,7 @@ def convert_to_markdown(segments: list, output_path: str, audio_name: str = None
 
             f.write(f"**[{timestamp}]** {text}\n\n")
 
-    print(f"✓ Markdown saved to: {output_path}")
+    print(f"[OK] Markdown saved to: {output_path}")
 
 
 def convert_to_detailed_markdown(segments: list, output_path: str, audio_name: str = None):
@@ -150,7 +150,7 @@ def convert_to_detailed_markdown(segments: list, output_path: str, audio_name: s
             f.write(f"**[{start} - {end}] {speaker}:**\n\n")
             f.write(f"{text}\n\n")
 
-    print(f"✓ Detailed Markdown saved to: {output_path}")
+    print(f"[OK] Detailed Markdown saved to: {output_path}")
 
 
 def main():
@@ -183,7 +183,7 @@ Examples:
     # Load JSON
     json_path = Path(args.json_path)
     if not json_path.exists():
-        print(f"✗ Error: File not found: {json_path}")
+        print(f"[ERROR] File not found: {json_path}")
         sys.exit(1)
 
     print(f"Loading: {json_path}")
@@ -191,10 +191,10 @@ Examples:
         segments = json.load(f)
 
     if not segments:
-        print("✗ Error: No segments found in JSON")
+        print("[ERROR] No segments found in JSON")
         sys.exit(1)
 
-    print(f"✓ Loaded {len(segments)} segments")
+    print(f"[OK] Loaded {len(segments)} segments")
 
     # Get audio name from filename
     audio_name = json_path.stem.replace("_tagged", "")
@@ -211,7 +211,7 @@ Examples:
     if args.format in ["detailed", "all"]:
         convert_to_detailed_markdown(segments, str(base_path) + "_detailed.md", audio_name)
 
-    print("\n✓ Conversion complete!")
+    print("\n[OK] Conversion complete!")
 
 
 if __name__ == "__main__":
